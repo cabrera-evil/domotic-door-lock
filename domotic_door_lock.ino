@@ -23,11 +23,9 @@ Servo doorServo;
 
 const int SERVO_PIN = 10;
 const int PIR_PIN   = A4;
-
-// Pines corregidos según tu prueba
-const int LED_R = A1;  // A1 = Rojo
-const int LED_B = A2;  // A2 = Azul
-const int LED_G = A3;  // A3 = Verde
+const int LED_R = A5;
+const int LED_G = 13;
+const int LED_B = 0;
 
 const int PIN_LENGTH = 4;
 int correctPin[PIN_LENGTH] = {1, 2, 3, 4};
@@ -43,11 +41,18 @@ const uint8_t LED_RED    = 4;
 enum SystemState { Idle, Active };
 SystemState systemState = Idle;
 
-unsigned long lastMotionTime = 0;
-const unsigned long MOTION_TIMEOUT = 5000;
+unsigned long lastKeypressTime = 0;
+unsigned long firstMotionTime = 0;
+const unsigned long KEYPRESS_TIMEOUT = 10000;
+const unsigned long MOTION_TRIGGER_DELAY = 500;
 
-// Common cathode - HIGH enciende, LOW apaga
 void setRgb(bool r, bool g, bool b) {
+  digitalWrite(LED_R, LOW);
+  digitalWrite(LED_G, LOW);
+  digitalWrite(LED_B, LOW);
+  
+  delayMicroseconds(100);
+  
   digitalWrite(LED_R, r ? HIGH : LOW);
   digitalWrite(LED_G, g ? HIGH : LOW);
   digitalWrite(LED_B, b ? HIGH : LOW);
@@ -55,11 +60,11 @@ void setRgb(bool r, bool g, bool b) {
 
 void setLed(uint8_t mode) {
   switch (mode) {
-    case LED_BLUE:   setRgb(false, false, true);  break; // Azul: sistema armado
-    case LED_YELLOW: setRgb(true, true, false);   break; // Amarillo: movimiento detectado
-    case LED_GREEN:  setRgb(false, true, false);  break; // Verde: acceso concedido
-    case LED_RED:    setRgb(true, false, false);  break; // Rojo: acceso denegado
-    default:         setRgb(false, false, false); break; // Apagado
+    case LED_BLUE:   setRgb(false, false, true);  break;
+    case LED_YELLOW: setRgb(true, true, false);   break;
+    case LED_GREEN:  setRgb(false, true, false);  break;
+    case LED_RED:    setRgb(true, false, false);  break;
+    default:         setRgb(false, false, false); break;
   }
 }
 
@@ -81,6 +86,8 @@ void goIdle() {
   lcdLine(0, "System armed");
   lcdLine(1, "Waiting motion");
   pinIndex = 0;
+  firstMotionTime = 0;
+  lastKeypressTime = 0;
 }
 
 void goActive() {
@@ -89,7 +96,7 @@ void goActive() {
   lcdLine(0, "Motion detected");
   lcdLine(1, "PIN: ");
   pinIndex = 0;
-  lastMotionTime = millis();
+  lastKeypressTime = millis();
 }
 
 bool isDigitKey(char key) {
@@ -123,6 +130,7 @@ void handlePinFailure() {
   setLed(LED_YELLOW);
   lcdLine(0, "Motion detected");
   resetPinEntry();
+  lastKeypressTime = millis();
 }
 
 void handlePinVerification() {
@@ -136,6 +144,8 @@ void handlePinVerification() {
 void handleKeypad() {
   char key = keypad.getKey();
   if (!key) return;
+
+  lastKeypressTime = millis();
 
   if (key == '#') {
     handlePinVerification();
@@ -153,18 +163,30 @@ void handleKeypad() {
 }
 
 void updatePIRState() {
+  if (systemState != Idle) return;
+  
   int pirState = digitalRead(PIR_PIN);
   
   if (pirState == HIGH) {
-    lastMotionTime = millis();
-    if (systemState == Idle) {
+    if (firstMotionTime == 0) {
+      firstMotionTime = millis();
+    }
+    
+    if (millis() - firstMotionTime >= MOTION_TRIGGER_DELAY) {
       goActive();
     }
+  } else {
+    firstMotionTime = 0;
   }
+}
+
+void checkKeypressTimeout() {
+  if (systemState != Active) return;
   
-  if (systemState == Active && 
-      (millis() - lastMotionTime > MOTION_TIMEOUT) && 
-      pinIndex == 0) {
+  if (millis() - lastKeypressTime > KEYPRESS_TIMEOUT) {
+    lcdLine(0, "Timeout");
+    lcdLine(1, "Returning...");
+    delay(1000);
     goIdle();
   }
 }
@@ -185,6 +207,8 @@ void setup() {
 
 void loop() {
   updatePIRState();
+  checkKeypressTimeout();
+  
   if (systemState == Active) {
     handleKeypad();
   } else {
