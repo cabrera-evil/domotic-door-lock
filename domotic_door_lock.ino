@@ -32,11 +32,11 @@ int correctPin[PIN_LENGTH] = {1, 2, 3, 4};
 int enteredPin[PIN_LENGTH];
 int pinIndex = 0;
 
-const uint8_t LED_OFF    = 0;
-const uint8_t LED_BLUE   = 1;
-const uint8_t LED_YELLOW = 2;
-const uint8_t LED_GREEN  = 3;
-const uint8_t LED_RED    = 4;
+const uint8_t LED_OFF   = 0;
+const uint8_t LED_WHITE = 1;
+const uint8_t LED_BLUE  = 2;
+const uint8_t LED_GREEN = 3;
+const uint8_t LED_RED   = 4;
 
 enum SystemState { Idle, Active };
 SystemState systemState = Idle;
@@ -50,9 +50,9 @@ void setRgb(bool r, bool g, bool b) {
   digitalWrite(LED_R, LOW);
   digitalWrite(LED_G, LOW);
   digitalWrite(LED_B, LOW);
-  
+
   delayMicroseconds(100);
-  
+
   digitalWrite(LED_R, r ? HIGH : LOW);
   digitalWrite(LED_G, g ? HIGH : LOW);
   digitalWrite(LED_B, b ? HIGH : LOW);
@@ -60,11 +60,11 @@ void setRgb(bool r, bool g, bool b) {
 
 void setLed(uint8_t mode) {
   switch (mode) {
-    case LED_BLUE:   setRgb(false, false, true);  break;
-    case LED_YELLOW: setRgb(true, true, false);   break;
-    case LED_GREEN:  setRgb(false, true, false);  break;
-    case LED_RED:    setRgb(true, false, false);  break;
-    default:         setRgb(false, false, false); break;
+    case LED_WHITE: setRgb(true,  true,  true);  break;
+    case LED_BLUE:  setRgb(false, false, true);  break;
+    case LED_GREEN: setRgb(false, true,  false); break;
+    case LED_RED:   setRgb(true,  false, false); break;
+    default:        setRgb(false, false, false); break;
   }
 }
 
@@ -82,7 +82,7 @@ void resetPinEntry() {
 
 void goIdle() {
   systemState = Idle;
-  setLed(LED_BLUE);
+  setLed(LED_WHITE);
   lcdLine(0, "System armed");
   lcdLine(1, "Waiting motion");
   pinIndex = 0;
@@ -92,7 +92,7 @@ void goIdle() {
 
 void goActive() {
   systemState = Active;
-  setLed(LED_YELLOW);
+  setLed(LED_BLUE);
   lcdLine(0, "Motion detected");
   lcdLine(1, "PIN: ");
   pinIndex = 0;
@@ -126,8 +126,7 @@ void handlePinFailure() {
   lcdLine(0, "Access denied");
   lcdLine(1, "Try again");
   delay(2000);
-  
-  setLed(LED_YELLOW);
+  setLed(LED_BLUE);
   lcdLine(0, "Motion detected");
   resetPinEntry();
   lastKeypressTime = millis();
@@ -164,14 +163,14 @@ void handleKeypad() {
 
 void updatePIRState() {
   if (systemState != Idle) return;
-  
+
   int pirState = digitalRead(PIR_PIN);
-  
+
   if (pirState == HIGH) {
     if (firstMotionTime == 0) {
       firstMotionTime = millis();
     }
-    
+
     if (millis() - firstMotionTime >= MOTION_TRIGGER_DELAY) {
       goActive();
     }
@@ -182,7 +181,7 @@ void updatePIRState() {
 
 void checkKeypressTimeout() {
   if (systemState != Active) return;
-  
+
   if (millis() - lastKeypressTime > KEYPRESS_TIMEOUT) {
     lcdLine(0, "Timeout");
     lcdLine(1, "Returning...");
@@ -193,7 +192,7 @@ void checkKeypressTimeout() {
 
 void setup() {
   lcd.begin(16, 2);
-  
+
   doorServo.attach(SERVO_PIN);
   doorServo.write(0);
 
@@ -201,14 +200,14 @@ void setup() {
   pinMode(LED_R, OUTPUT);
   pinMode(LED_G, OUTPUT);
   pinMode(LED_B, OUTPUT);
-  
+
   goIdle();
 }
 
 void loop() {
   updatePIRState();
   checkKeypressTimeout();
-  
+
   if (systemState == Active) {
     handleKeypad();
   } else {
