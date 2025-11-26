@@ -52,7 +52,7 @@ This smart door lock system provides an automated security solution using Arduin
 
 ```cpp
 LiquidCrystal lcd(12, 11, 14, 15, 16, 17);
-// RS=12, EN=11, D4=14, D5=15, D6=16, D7=17
+// RS=12, EN=11, D4=A0, D5=A1, D6=A2, D7=A3
 ```
 
 ### 4x4 Keypad Matrix
@@ -67,9 +67,9 @@ Col Pins: [5, 4, 3, 2]
 - **Servo Motor**: Pin 10
 - **PIR Sensor**: Pin A4
 - **RGB LED**:
-  - Red: Pin A1
-  - Green: Pin A3
-  - Blue: Pin A2
+  - Red: Pin A5
+  - Green: Pin 13
+  - Blue: Pin 0
 
 ## Circuit Diagram
 
@@ -106,8 +106,8 @@ int correctPin[PIN_LENGTH] = {1, 2, 3, 4}; // Change to your desired PIN
 
 ### System Operation
 
-1. **System Armed**: Blue LED indicates the system is monitoring for motion
-2. **Motion Detected**: Yellow LED activates, LCD prompts for PIN entry
+1. **System Armed**: White LED indicates the system is monitoring for motion
+2. **Motion Detected**: Blue LED activates, LCD prompts for PIN entry
 3. **PIN Entry**: Enter 4-digit PIN using keypad
 4. **Authentication**:
    - Press `#` to confirm PIN
@@ -131,17 +131,17 @@ The system operates in two primary states:
 
 ### Idle State
 
-- **LED Status**: Blue
+- **LED Status**: White
 - **Display**: "System armed" / "Waiting motion"
 - **Behavior**: Monitoring PIR sensor for motion
 - **Power**: Low power consumption mode
 
 ### Active State
 
-- **LED Status**: Yellow
+- **LED Status**: Blue
 - **Display**: "Motion detected" / "PIN: \_\_\_\_"
 - **Behavior**: Accepting keypad input
-- **Timeout**: Returns to Idle after 5 seconds without input
+- **Timeout**: Returns to Idle after 10 seconds without input
 
 ## API Reference
 
@@ -152,8 +152,8 @@ The system operates in two primary states:
 Controls RGB LED status indication
 
 - `LED_OFF`: All LEDs off
-- `LED_BLUE`: System armed (idle)
-- `LED_YELLOW`: Motion detected (active)
+- `LED_WHITE`: System armed (idle)
+- `LED_BLUE`: Motion detected (active)
 - `LED_GREEN`: Access granted
 - `LED_RED`: Access denied
 
@@ -174,8 +174,9 @@ Validates entered PIN against stored credential
 ### System Constants
 
 ```cpp
-const int PIN_LENGTH = 4;           // PIN digit count
-const unsigned long MOTION_TIMEOUT = 5000; // Auto-idle timeout (ms)
+const int PIN_LENGTH = 4;                       // PIN digit count
+const unsigned long KEYPRESS_TIMEOUT = 10000;   // Auto-idle timeout (ms)
+const unsigned long MOTION_TRIGGER_DELAY = 500; // Motion detection delay (ms)
 ```
 
 ## Troubleshooting
