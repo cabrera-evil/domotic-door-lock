@@ -1,33 +1,3 @@
-/**
- * Domotic Door Lock System
- * 
- * An Arduino-based smart door lock system that uses:
- * - PIR motion sensor for presence detection
- * - 4x4 keypad for PIN entry
- * - Servo motor for door lock mechanism
- * - LCD display for user feedback
- * - RGB LED for visual status indication
- * 
- * System operates in two states:
- * 1. Idle: Waiting for motion detection
- * 2. Active: Allowing PIN entry after motion detected
- */
-
-/**
- * Domotic Door Lock System
- * 
- * An Arduino-based smart door lock system that uses:
- * - PIR motion sensor for presence detection
- * - 4x4 keypad for PIN entry
- * - Servo motor for door lock mechanism
- * - LCD display for user feedback
- * - RGB LED for visual status indication
- * 
- * System operates in two states:
- * 1. Idle: Waiting for motion detection
- * 2. Active: Allowing PIN entry after motion detected
- */
-
 #include <LiquidCrystal.h>
 #include <Keypad.h>
 #include <Servo.h>
